@@ -19,7 +19,9 @@ export default class TSERecord {
   public get record(): Record {
     return this._record as Record;
   }
-
+  public get url(): string {
+    return this._url;
+  }
   public static async setup(url: string, fields: Field[]): Promise<TSERecord> {
     const browser: Browser = await chromium.launch({ headless: HEADLESS });
     const context: BrowserContext = await browser.newContext();
@@ -28,13 +30,12 @@ export default class TSERecord {
     await context.route("**.[png,jpg,jpeg,gif,do,ico,css]", (route) =>
       route.abort()
     );
+    await page.goto(url);
 
     return new TSERecord({ browser, page, url, fields });
   }
 
   public async getRecordByDNI(dni: DNI): Promise<any> {
-    this._page?.goto(this._url);
-
     const inputDNI = await this._page?.getByPlaceholder(
       "Digite el número de cédula ahora"
     );
@@ -44,10 +45,11 @@ export default class TSERecord {
 
     await this._page?.getByText("Ver Más Detalles").click();
     await this._page?.waitForNavigation();
+
     return this._getPageData(this._fields);
   }
 
-  public close() {
+  private _close() {
     this._browser.close();
   }
 
@@ -61,7 +63,7 @@ export default class TSERecord {
           ];
         })
       );
-
+      this._close();
       return Object.fromEntries(data);
     }
   }
